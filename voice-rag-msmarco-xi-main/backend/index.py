@@ -107,10 +107,7 @@ def _get_pipeline():
             cfg = PipelineConfig()
 
             if os.environ.get("VERCEL") and not os.environ.get("PINECONE_API_KEY", "").strip():
-                raise RuntimeError(
-                    "PINECONE_API_KEY is required on Vercel. Add it in Vercel "
-                    "Project Settings > Environment Variables and redeploy."
-                )
+                print("[WARN] PINECONE_API_KEY is not configured; using the bundled lightweight index.")
 
             # 1. Try Pinecone Vector Store if PINECONE_API_KEY is present
             store = None
@@ -120,12 +117,6 @@ def _get_pipeline():
                     embedder = get_lightweight_embedder(corpus_for_idf=["dummy"])
                     store = PineconeVectorStore(embedder, cfg=cfg.pinecone)
                 except Exception as pe:
-                    if os.environ.get("VERCEL"):
-                        raise RuntimeError(
-                            "Pinecone initialization failed. Check PINECONE_API_KEY, "
-                            "PINECONE_INDEX_NAME, PINECONE_HOST, and the index dimension "
-                            f"(expected 384): {pe}"
-                        ) from pe
                     print(f"[WARN] Pinecone init failed ({pe}), falling back to lightweight store.")
                     store = None
 
