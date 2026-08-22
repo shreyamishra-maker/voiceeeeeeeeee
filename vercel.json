@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "voice-rag-msmarco-xi-main/backend/index.py": {
+      "includeFiles": "voice-rag-msmarco-xi-main/{data/**,src/**,config.py,frontend/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/voice-rag-msmarco-xi-main/backend/index.py/$1"
+    }
+  ]
+}
