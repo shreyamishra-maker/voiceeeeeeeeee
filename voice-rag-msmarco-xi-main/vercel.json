@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "backend/index.py": {
+      "includeFiles": "{data/**,src/**,config.py,frontend/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/backend/index.py/$1"
+    }
+  ]
+}

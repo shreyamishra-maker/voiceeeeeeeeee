@@ -1,0 +1,15 @@
+{
+  "queries": 300,
+  "index_chunks": 80,
+  "retrieval_only_ms": {
+    "p50": 0.141,
+    "p70": 0.159,
+    "p100": 0.629
+  },
+  "end_to_end_ms": {
+    "p50": 0.21,
+    "p70": 0.24,
+    "p100": 0.856
+  },
+  "mean_end_to_end_ms": 0.233
+}

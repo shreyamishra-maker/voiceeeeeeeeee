@@ -1,0 +1,24 @@
+{
+  "include": [
+    "src",
+    "backend",
+    "run.py",
+    "config.py"
+  ],
+  "exclude": [
+    "**/__pyrefly_virtual__/**",
+    "**/__pycache__/**"
+  ],
+  "ignore": [
+    "**/__pyrefly_virtual__/**"
+  ],
+  "extraPaths": [
+    ".",
+    "src"
+  ],
+  "typeCheckingMode": "off",
+  "reportMissingImports": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportUndefinedVariable": "none",
+  "reportUnboundVariable": "none"
+}

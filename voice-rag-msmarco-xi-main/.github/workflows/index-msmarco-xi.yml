@@ -1,0 +1,60 @@
+name: Index MSMARCO-XI in Pinecone
+
+on:
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Hugging Face language config, for example hi or ta
+        required: true
+        default: hi
+      limit:
+        description: Number of dataset rows to index; 0 means all
+        required: true
+        default: '1000'
+      index_name:
+        description: Pinecone index name
+        required: true
+        default: voicerag-index
+      namespace:
+        description: Pinecone namespace; leave empty for the default namespace
+        required: false
+        default: ''
+      batch_rows:
+        description: Dataset rows processed per batch
+        required: true
+        default: '25'
+      source:
+        description: Index source; huggingface streams the real MSMARCO-XI dataset
+        required: true
+        default: huggingface
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -u -m pip install --upgrade pip && python -u -m pip install --no-cache-dir -r requirements-index.txt
+
+      - name: Stream MSMARCO-XI into Pinecone
+        env:
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_HOST: ${{ secrets.PINECONE_HOST }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PINECONE_INDEX_NAME: ${{ inputs.index_name }}
+          PINECONE_NAMESPACE: ${{ inputs.namespace }}
+          HF_DATASET_CONFIG: ${{ inputs.language }}
+          HF_DATASET_SPLIT: train
+          HF_DATASET_LIMIT: ${{ inputs.limit }}
+          HF_DATASET_BATCH_ROWS: ${{ inputs.batch_rows }}
+          INDEX_SOURCE: ${{ inputs.source }}
+          PYTHONUNBUFFERED: '1'
+        run: python -u scripts/index_to_pinecone.py

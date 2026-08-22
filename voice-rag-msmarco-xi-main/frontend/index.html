@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dulset — AI Speech-to-Text & Voice Synthesis Answer Engine</title>
+  <meta name="description" content="Ask questions by voice in English or Hindi. AI-powered RAG pipeline with real-time speech-to-text, document retrieval, and ElevenLabs voice output.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner-ring"></div>
+      <div class="loading-text" id="loading-text">Processing your query...</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Voice Settings Modal -->
+  <div class="modal-backdrop" id="voice-modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">⚙️</span>
+          <span>Voice & ElevenLabs Settings</span>
+        </div>
+        <button class="modal-close-btn" id="close-modal-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="setting-group">
+          <label class="setting-label" for="tts-provider-select">Text-to-Speech Engine</label>
+          <select class="custom-select" id="tts-provider-select">
+            <option value="elevenlabs">ElevenLabs AI Voices (Ultra-Realistic)</option>
+            <option value="browser">Browser Web Speech API (Local Fallback)</option>
+          </select>
+          <div class="setting-hint">Select your preferred voice synthesis engine for speaking answers.</div>
+        </div>
+
+        <div class="setting-group" id="eleven-settings-group">
+          <label class="setting-label" for="eleven-api-key">ElevenLabs API Key</label>
+          <div class="key-input-wrap">
+            <input type="password" class="custom-input" id="eleven-api-key" placeholder="Enter your xi-api-key (e.g. sk_... / xi_...)">
+            <button class="toggle-vis-btn" id="toggle-key-vis" type="button">👁️</button>
+          </div>
+          <div class="setting-hint" id="key-status-hint">
+            Stored securely in your local browser session. You can also set <code>ELEVENLABS_API_KEY</code> in <code>.env</code>.
+          </div>
+        </div>
+
+        <div class="setting-group" id="voice-select-group">
+          <label class="setting-label" for="voice-select">ElevenLabs Voice</label>
+          <select class="custom-select" id="voice-select">
+            <option value="EXAVITQu4vr4xnSDxMaL" selected>Sarah — Mature, Reassuring, Confident (Female)</option>
+            <option value="JBFqnCBsd6RMkjVDRZzb">George — Warm, Captivating Storyteller (Male)</option>
+            <option value="Xb7hH8MSUJpSbSDYk0k2">Alice — Clear, Engaging Educator (Female)</option>
+            <option value="IKne3meq5aSn9XLyUdCD">Charlie — Deep, Confident, Energetic (Male)</option>
+            <option value="FGY2WhTYpPnrIDTdsKH5">Laura — Enthusiast, Quirky, Friendly (Female)</option>
+            <option value="CwhRBWXzGAHq8TQ4Fs17">Roger — Laid-Back, Casual, Resonant (Male)</option>
+            <option value="SAz9YHcvj6GT2YYXdXww">River — Relaxed, Neutral, Informative</option>
+            <option value="TX3LPaxmHKxFdv7VOQHJ">Liam — Energetic, Expressive Social Media (Male)</option>
+          </select>
+        </div>
+
+        <div class="setting-group" id="model-select-group">
+          <label class="setting-label" for="model-select">ElevenLabs Model</label>
+          <select class="custom-select" id="model-select">
+            <option value="eleven_multilingual_v2">eleven_multilingual_v2 (Best for English & Hindi)</option>
+            <option value="eleven_turbo_v2_5">eleven_turbo_v2_5 (Lowest latency)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="test-voice-btn">
+          <span>🔊 Test Voice</span>
+        </button>
+        <button class="modal-btn primary" id="save-settings-btn">
+          <span>Save Preferences</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="app-logo">
+        <div class="app-logo-icon">🎙️</div>
+        <h1 class="app-title">Dulset</h1>
+      </div>
+      <p class="app-subtitle">
+        Ask questions by voice or text — powered by AI retrieval-augmented generation with real-time speech recognition & voice synthesis
+      </p>
+    </header>
+
+    <!-- Controls Bar (Language Toggle + Settings) -->
+    <div class="top-controls-bar">
+      <div class="language-toggle">
+        <button class="lang-btn active" data-lang="en-US">
+          <span class="lang-flag">🇺🇸</span> English
+        </button>
+        <button class="lang-btn" data-lang="hi-IN">
+          <span class="lang-flag">🇮🇳</span> हिन्दी
+        </button>
+      </div>
+
+      <div class="top-settings-btn-wrap">
+        <button class="settings-btn" id="open-settings-btn" title="Configure ElevenLabs Voice & API Key">
+          <span class="settings-icon">⚙️</span>
+          <span class="settings-text">Voice Settings</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Browser Warning -->
+    <div class="browser-warning" id="browser-warning">
+      ⚠️ Your browser does not support the Web Speech API. Please use <strong>Chrome</strong> or <strong>Edge</strong> for speech-to-text. You can still type your questions below.
+    </div>
+
+    <!-- Input Card -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="card-icon mic">🎤</div>
+        <div class="card-title">Ask a Question</div>
+      </div>
+
+      <!-- Mic Section -->
+      <div class="mic-section">
+        <button class="mic-btn" id="mic-btn" aria-label="Toggle speech recognition">
+          🎙️
+        </button>
+
+        <!-- Waveform -->
+        <div class="waveform-container" id="waveform">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+
+        <div class="mic-status" id="mic-status">
+          Click the microphone or type below
+        </div>
+      </div>
+
+      <!-- Transcript Display -->
+      <div class="transcript-area" id="transcript-area">
+        <span class="transcript-placeholder">Your speech will appear here...</span>
+      </div>
+
+      <!-- Or Divider -->
+      <div class="or-divider">or type your question</div>
+
+      <!-- Text Input -->
+      <div class="text-input-wrap">
+        <input type="text" class="text-input" id="text-input"
+               placeholder="Type your question here..."
+               autocomplete="off" spellcheck="false">
+        <button class="send-btn" id="send-btn">
+          <span>Send</span> →
+        </button>
+      </div>
+    </div>
+
+    <!-- Answer Card -->
+    <div class="answer-section" id="answer-section">
+      <div class="glass-card answer-card">
+        <div class="card-header">
+          <div class="card-icon answer">💡</div>
+          <div class="card-title">Answer</div>
+          <div style="margin-left: auto; font-size: 0.8rem; color: var(--text-muted);">
+            Total: <span id="total-latency" style="color: var(--text-accent); font-weight: 600;">—</span>
+          </div>
+        </div>
+
+        <!-- Speak Answer Actions Toolbar -->
+        <div class="answer-actions-toolbar">
+          <div class="tts-button-group">
+            <button class="speak-btn" id="speak-btn" title="Listen to this answer spoken aloud">
+              <span class="speak-icon" id="speak-icon">🔊</span>
+              <span class="speak-btn-text" id="speak-btn-text">Speak Answer</span>
+            </button>
+            <button class="stop-btn" id="stop-btn" style="display: none;" title="Stop audio playback">
+              <span>⏹️ Stop</span>
+            </button>
+          </div>
+
+          <div class="tts-playing-indicator" id="tts-playing-indicator" style="display: none;">
+            <span class="pulse-dot"></span>
+            <span class="playing-label" id="playing-label">Speaking with ElevenLabs...</span>
+            <div class="mini-waveform">
+              <span class="mini-bar"></span>
+              <span class="mini-bar"></span>
+              <span class="mini-bar"></span>
+              <span class="mini-bar"></span>
+            </div>
+          </div>
+
+          <div class="tts-options-group">
+            <label class="auto-speak-label" title="Automatically speak answers when questions are answered">
+              <input type="checkbox" id="auto-speak-toggle" class="auto-speak-checkbox">
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Auto-speak</span>
+            </label>
+            <span class="voice-badge" id="voice-badge" title="Click to configure voice settings">ElevenLabs (Sarah)</span>
+          </div>
+        </div>
+
+        <div class="answer-status" id="answer-status"></div>
+        <div class="answer-text" id="answer-text"></div>
+      </div>
+    </div>
+
+    <!-- Retrieved Chunks Card -->
+    <div class="chunks-section" id="chunks-section">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-icon chunks">📄</div>
+          <div class="card-title">Retrieved Passages</div>
+        </div>
+        <div id="chunks-list"></div>
+      </div>
+    </div>
+
+    <!-- Timings & Guardrails Card -->
+    <div class="timing-section" id="timing-section">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-icon timing">⚡</div>
+          <div class="card-title">Pipeline Timings & Guardrails</div>
+        </div>
+        <div class="timing-grid" id="timing-grid"></div>
+        <div class="guardrail-list" id="guardrail-list"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      Dulset — MSMARCO-XI • Hybrid Retrieval (Dense + BM25 + RRF) • 4 Chunking Strategies • ElevenLabs Voice Synthesis
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

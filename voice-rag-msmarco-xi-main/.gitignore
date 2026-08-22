@@ -1,0 +1,35 @@
+# Secrets & Credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+credentials.json
+secrets.json
+
+# Python Virtual Environments & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+*.egg-info/
+
+# Vercel Build Artifacts
+.vercel
+
+# IDE & OS files
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+.vercel
